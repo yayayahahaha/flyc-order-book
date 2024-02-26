@@ -13,7 +13,7 @@
           <thousand-text :amount="item.price" />
         </td>
         <td class="size" :class="item.sizeClass">
-          <thousand-text :amount="item.size" />
+          <thousand-text :amount="item.size" :no-zero="true" />
         </td>
         <td class="total pr-5">
           <total-bar :value="item.total" :total="total" :type="type" />

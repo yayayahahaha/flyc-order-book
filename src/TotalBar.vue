@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="bar" :class="type" :style="{ width: `${width}%` }"></div>
-    <thousand-text :amount="value" />
+    <thousand-text :amount="value" :no-zero="true" />
   </div>
 </template>
 
