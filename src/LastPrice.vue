@@ -4,7 +4,7 @@
       <thousand-text v-if="firstMessage" :amount="amount" />
       <span v-else>-</span>
     </h2>
-    <ArrowIcon v-if="firstMessage" class="icon" />
+    <ArrowIcon v-if="showIcon" class="icon" />
   </div>
 </template>
 
@@ -27,6 +27,12 @@ export default {
       amount: 0,
       firstMessage: false,
     }
+  },
+
+  computed: {
+    showIcon() {
+      return this.firstMessage && this.currentClass !== DEFAULT_TEXT
+    },
   },
 
   mounted() {

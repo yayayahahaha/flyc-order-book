@@ -14,7 +14,7 @@
       <tbody>
         <tr v-for="item in sellData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
           <td class="price">
-            <thousand-text :amount="item.prize" />
+            <thousand-text :amount="item.price" />
           </td>
           <td class="size">
             <thousand-text :amount="item.size" />
@@ -34,7 +34,7 @@
       <tbody>
         <tr v-for="item in buyData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
           <td class="price">
-            <thousand-text :amount="item.prize" />
+            <thousand-text :amount="item.price" />
           </td>
           <td class="size">
             <thousand-text :amount="item.size" />
@@ -66,33 +66,37 @@ export default {
     }
   },
 
-  created() {
-    this.sellData = [...Array(8)].map(() => ({ prize: 123123, size: 123, total: 123 }))
-    this.buyData = [...Array(8)].map(() => ({ prize: 123123, size: 123123, total: 123 }))
-  },
-
   mounted() {
-    // this.initOrderbookSocket()
+    this.initOrderbookSocket()
   },
 
   methods: {
     initOrderbookSocket() {
+      const TOPIC_TEXT = 'update:BTCPFC'
       const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
 
       // Connection opened
       orderbookSocket.addEventListener('open', () => {
-        orderbookSocket.send(
-          JSON.stringify({
-            op: 'subscribe',
-            args: ['update:BTCPFC'],
-          })
-        )
+        orderbookSocket.send(JSON.stringify({ op: 'subscribe', args: [TOPIC_TEXT] }))
       })
 
       // Listen for messages
       orderbookSocket.addEventListener('message', (event) => {
-        console.log('Message from server ', event.data)
+        const { topic, data } = JSON.parse(event.data)
+
+        if (topic !== TOPIC_TEXT) return
+        if (data.type !== 'snapshot') return
+
+        const { bids, asks } = data
+
+        this.sellData = asks.map(_mapFunc).slice(-8)
+        this.buyData = bids.map(_mapFunc).slice(0, 8)
       })
+
+      function _mapFunc(item) {
+        const [price, size] = item
+        return { price, size, key: `key-${price}`, total: 123 }
+      }
     },
   },
 }

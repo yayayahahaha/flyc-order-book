@@ -4,6 +4,9 @@
 }
 
 :root {
+  /* buy 綠色 */
+  /* sell 紅色 */
+
   /* title 下面那條線的顏色, 這個是自己加上 opacity 的  */
   --default-text-color-for-line: #f0f4f822;
 
