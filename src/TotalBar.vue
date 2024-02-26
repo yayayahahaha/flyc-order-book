@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div class="bar" :class="type"></div>
+    <div class="bar" :class="type" :style="{ width: `${width}%` }"></div>
     <thousand-text :amount="value" />
   </div>
 </template>
@@ -33,11 +33,11 @@ export default {
     },
   },
 
-  data() {
-    return {}
+  computed: {
+    width() {
+      return (100 * this.value) / this.total
+    },
   },
-
-  computed: {},
 }
 </script>
 

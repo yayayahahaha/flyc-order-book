@@ -12,7 +12,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in sellData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
+        <tr v-for="item in sellData" :key="item.key">
           <td class="price">
             <thousand-text :amount="item.price" />
           </td>
@@ -20,7 +20,7 @@
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
-            <total-bar :value="item.total" :total="total___" type="sell" />
+            <total-bar :value="item.total" :total="sellTotal" type="sell" />
           </td>
         </tr>
       </tbody>
@@ -32,7 +32,7 @@
     <!-- 綠色 -->
     <table class="buy">
       <tbody>
-        <tr v-for="item in buyData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
+        <tr v-for="item in buyData" :key="item.key">
           <td class="price">
             <thousand-text :amount="item.price" />
           </td>
@@ -40,7 +40,7 @@
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
-            <total-bar :value="item.total" :total="total___" type="buy" />
+            <total-bar :value="item.total" :total="buyTotal" type="buy" />
           </td>
         </tr>
       </tbody>
@@ -58,12 +58,19 @@ export default {
 
   data() {
     return {
-      amount: 123123,
-      total___: 123123123,
-
       sellData: [],
       buyData: [],
     }
+  },
+
+  computed: {
+    sellTotal() {
+      return this.sellData[0].total
+    },
+
+    buyTotal() {
+      return this.buyData.slice(-1)[0].total
+    },
   },
 
   mounted() {
