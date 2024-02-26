@@ -76,17 +76,17 @@ export default {
     },
 
     sellOriMap() {
-      return Object.fromEntries(this.sellOriData.map((item) => [item.price, item]))
+      return Object.fromEntries(this.sellOriData.map((item) => [item.key, item]))
     },
     sellMap() {
-      return Object.fromEntries(this.sellData.map((item) => [item.price, item]))
+      return Object.fromEntries(this.sellData.map((item) => [item.key, item]))
     },
 
     buyOriMap() {
-      return Object.fromEntries(this.buyOriData.map((item) => [item.price, item]))
+      return Object.fromEntries(this.buyOriData.map((item) => [item.key, item]))
     },
     buyMap() {
-      return Object.fromEntries(this.buyData.map((item) => [item.price, item]))
+      return Object.fromEntries(this.buyData.map((item) => [item.key, item]))
     },
   },
 
@@ -97,31 +97,19 @@ export default {
   },
 
   methods: {
-    handleSnapshot(data) {
+    handleSnapshot(data, type) {
       const { bids, asks } = data
 
-      function oriPart(delta, oriMap, oriList) {
-        delta.forEach((item) => {
-          const [price, size] = item
-          const oriItem = oriMap[price]
-          if (oriItem == null) {
-            oriList.push({ price, size })
-            oriList.sort((a, b) => Number(a.price) - Number(b.price))
-          } else {
-            Object.assign(oriItem, { price, size })
-          }
-        })
-
-        return oriList.filter((item) => Number(item.size) !== 0)
-      }
-
-      this.buyOriData = oriPart(bids, this.buyOriMap, this.buyOriData)
-      this.sellOriData = oriPart(asks, this.sellOriMap, this.sellOriData)
+      this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
+      this.sellOriData = _oriPart(asks, this.sellOriMap, this.sellOriData)
 
       // TODO 這邊以下要處理一下新增和閃爍的那部分
 
-      this.sellData = handleTotal(this.sellOriData.slice(-8).map(_mapFunc).reverse()).reverse()
-      this.buyData = handleTotal(this.buyOriData.slice(0, 8).map(_mapFunc))
+      const newSellData = handleTotal(this.sellOriData.slice(-8).reverse()).reverse()
+      const newBuyData = handleTotal(this.buyOriData.slice(0, 8))
+
+      this.sellData = newSellData
+      this.buyData = newBuyData
 
       function handleTotal(list) {
         return list.reduce(
@@ -136,9 +124,22 @@ export default {
         ).list
       }
 
-      function _mapFunc(item) {
-        const { price, size } = item
-        return { price, size: Number(size), key: `key-${price}`, total: 0 }
+      function _oriPart(delta, oriMap, oriList) {
+        delta.forEach((item) => {
+          const [oriPrice, oriSize] = item
+          const [price, size] = [Number(oriPrice), Number(oriSize)]
+          const key = `key-${price}`
+          const oriItem = oriMap[key]
+
+          if (oriItem == null) {
+            oriList.push({ key, price, size, total: 0 })
+            oriList.sort((a, b) => a.price - b.price)
+          } else {
+            Object.assign(oriItem, { price, size })
+          }
+        })
+
+        return oriList.filter((item) => item.size !== 0)
       }
     },
 
@@ -194,12 +195,11 @@ export default {
         if (topic !== TOPIC_TEXT) return
         switch (data.type) {
           case 'snapshot':
-            this.handleSnapshot(data)
+            this.handleSnapshot(data, 'snapshot')
             break
 
           case 'delta':
-            console.log('receive delta')
-            this.handleSnapshot(data)
+            this.handleSnapshot(data, 'delta')
             break
         }
       })
