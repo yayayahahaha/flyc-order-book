@@ -68,6 +68,31 @@ export default {
     this.sellData = [...Array(8)].map(() => ({ prize: 123123, size: 123, total: 123 }))
     this.buyData = [...Array(8)].map(() => ({ prize: 123123, size: 123123, total: 123 }))
   },
+
+  mounted() {
+    // this.initOrderbookSocket()
+  },
+
+  methods: {
+    initOrderbookSocket() {
+      const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
+
+      // Connection opened
+      orderbookSocket.addEventListener('open', () => {
+        orderbookSocket.send(
+          JSON.stringify({
+            op: 'subscribe',
+            args: ['update:BTCPFC'],
+          })
+        )
+      })
+
+      // Listen for messages
+      orderbookSocket.addEventListener('message', (event) => {
+        console.log('Message from server ', event.data)
+      })
+    },
+  },
 }
 </script>
 

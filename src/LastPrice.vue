@@ -28,6 +28,31 @@ export default {
       currentClass: 'buy',
     }
   },
+
+  mounted() {
+    this.initLastPriceSocket()
+  },
+
+  methods: {
+    initLastPriceSocket() {
+      const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/futures')
+
+      // Connection opened
+      orderbookSocket.addEventListener('open', () => {
+        orderbookSocket.send(
+          JSON.stringify({
+            op: 'subscribe',
+            args: ['tradeHistoryApi:BTCPFC'],
+          })
+        )
+      })
+
+      // Listen for messages
+      orderbookSocket.addEventListener('message', (event) => {
+        console.log('Message from server ', event.data)
+      })
+    },
+  },
 }
 </script>
 
