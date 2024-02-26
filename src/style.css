@@ -4,12 +4,18 @@
 }
 
 :root {
+  /* buy 綠色 */
+  /* sell 紅色 */
+
   /* title 下面那條線的顏色, 這個是自己加上 opacity 的  */
   --default-text-color-for-line: #f0f4f822;
 
   --background-color: #131b29;
   --default-text-color: #f0f4f8;
   --quote-table-head-text-color: #8698aa;
+
+  /* last price 的預設背景顏色，是自己加上的 */
+  --last-price-default-background-color: rgba(134, 152, 170, 0.12);
 
   --buy-quote-price-text-color: #00b15d;
   --sell-quote-price-text-color: #ff5b5a;
@@ -20,8 +26,8 @@
   --buy-quote-accumulative-total-size-bar-color: rgba(16, 186, 104, 0.12);
   --sell-quote-accumulative-total-size-bar-color: rgba(255, 90, 90, 0.12);
 
-  --animation-flash-green-background-color: rgba(0, 177, 93, 0.5);
   --animation-flash-red-background-color: rgba(255, 91, 90, 0.5);
+  --animation-flash-green-background-color: rgba(0, 177, 93, 0.5);
 }
 
 body {
@@ -30,3 +36,6 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+/* reference */
+/* https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties */

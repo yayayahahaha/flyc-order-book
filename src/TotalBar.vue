@@ -1,7 +1,7 @@
 <template>
   <div class="container">
-    <div class="bar" :class="type"></div>
-    <thousand-text :amount="value" />
+    <div class="bar" :class="type" :style="{ width: `${width}%` }"></div>
+    <thousand-text :amount="value" :no-zero="true" />
   </div>
 </template>
 
@@ -33,11 +33,11 @@ export default {
     },
   },
 
-  data() {
-    return {}
+  computed: {
+    width() {
+      return (100 * this.value) / this.total
+    },
   },
-
-  computed: {},
 }
 </script>
 
@@ -48,8 +48,8 @@ export default {
   .bar {
     position: absolute;
     right: 0px;
-    top: 0px;
-    bottom: 0px;
+    top: 1px;
+    bottom: 1px;
 
     z-index: -1;
 

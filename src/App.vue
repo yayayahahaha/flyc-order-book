@@ -1,72 +1,192 @@
 <template>
-  <div>
+  <div class="fade-out-red">
     <h3 class="title">Order Book</h3>
 
-    <table class="sell">
-      <thead>
-        <tr>
-          <th class="table-header price">Price (USD)</th>
-          <th class="table-header size">Size</th>
-          <th class="table-header total">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in sellData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
-          <td class="price">
-            <thousand-text :amount="item.prize" />
-          </td>
-          <td class="size">
-            <thousand-text :amount="item.size" />
-          </td>
-          <td class="total">
-            <total-bar :value="item.total" :total="total___" type="sell" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- 紅色 -->
+    <order-table :data="sellData" :total="sellTotal" type="sell" />
 
-    <last-price :amount="amount" />
+    <!-- 中間的那個數字 -->
+    <last-price />
 
-    <!-- TODO 這個應該可以整理成一個? -->
-    <table class="buy">
-      <tbody>
-        <tr v-for="item in buyData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">
-          <td class="price">
-            <thousand-text :amount="item.prize" />
-          </td>
-          <td class="size">
-            <thousand-text :amount="item.size" />
-          </td>
-          <td class="total">
-            <total-bar :value="item.total" :total="total___" type="buy" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- 綠色 -->
+    <order-table :data="buyData" :total="buyTotal" type="buy" />
   </div>
 </template>
 
 <script>
 import LastPrice from './LastPrice.vue'
-import ThousandText from './ThousandText.vue'
-import TotalBar from './TotalBar.vue'
+import OrderTable from './OrderTable.vue'
+
+const FADE_OUT_GREEN_CLASS = 'fade-out-green'
+const FADE_OUT_RED_CLASS = 'fade-out-red'
+const SELL_TEXT = 'sell'
+const BUY_TEXT = 'buy'
 
 export default {
-  components: { LastPrice, ThousandText, TotalBar },
+  components: { LastPrice, OrderTable },
 
   data() {
     return {
-      amount: 123123,
-      total___: 123123123,
-
+      sellOriData: [],
       sellData: [],
+
+      buyOriData: [],
       buyData: [],
     }
   },
 
-  created() {
-    this.sellData = [...Array(8)].map(() => ({ prize: 123123, size: 123, total: 123 }))
-    this.buyData = [...Array(8)].map(() => ({ prize: 123123, size: 123123, total: 123 }))
+  computed: {
+    sellTotal() {
+      const neededItem = this.sellData[0]
+      if (neededItem == null) return 0
+
+      return neededItem.total
+    },
+
+    buyTotal() {
+      const neededItem = this.buyData.slice(-1)[0]
+      if (neededItem == null) return 0
+
+      return neededItem.total
+    },
+
+    sellOriMap() {
+      return Object.fromEntries(this.sellOriData.map((item) => [item.key, item]))
+    },
+    sellMap() {
+      return Object.fromEntries(this.sellData.map((item) => [item.key, item]))
+    },
+
+    buyOriMap() {
+      return Object.fromEntries(this.buyOriData.map((item) => [item.key, item]))
+    },
+    buyMap() {
+      return Object.fromEntries(this.buyData.map((item) => [item.key, item]))
+    },
+  },
+
+  mounted() {
+    this.initOrderbookSocket()
+
+    window.vm = this
+  },
+
+  methods: {
+    handleSnapshot(data, type) {
+      const { bids, asks } = data
+
+      this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
+      this.sellOriData = _oriPart(asks, this.sellOriMap, this.sellOriData)
+
+      const newSellData = _handleTotal(this.sellOriData.slice(-8)).reverse()
+      const newBuyData = _handleTotal(this.buyOriData.slice(0, 8))
+
+      // 如果是 snapshot 的話，代表是新的、直接指定上去就好
+      if (type === 'snapshot') {
+        this.sellData = newSellData
+        this.buyData = newBuyData
+        return
+      }
+
+      // TEST
+      // return
+
+      // 這是 delta 的部分
+      this.sellData = combineUpdate(newSellData, this.sellMap, 'sell')
+      this.buyData = combineUpdate(newBuyData, this.buyMap, 'buy')
+
+      function combineUpdate(newList, currentMap, type) {
+        return newList.reduce((list, item) => {
+          const { key, total, size } = item
+          const currentItem = currentMap[key]
+          if (currentItem == null) {
+            const className = type === SELL_TEXT ? FADE_OUT_RED_CLASS : type === BUY_TEXT ? FADE_OUT_GREEN_CLASS : ''
+            list.push({ ...item, class: className })
+          } else {
+            // total 直接覆寫
+            currentItem.total = total
+
+            // size 的閃爍處理
+            switch (true) {
+              case currentItem.size < size:
+                currentItem.sizeClass = FADE_OUT_GREEN_CLASS
+                break
+
+              case currentItem.size > size:
+                currentItem.sizeClass = FADE_OUT_RED_CLASS
+                break
+            }
+            currentItem.size = size
+
+            // reset class: TODO 在連續修正的時候可能會有問題
+            setTimeout(() => {
+              currentItem.class = ''
+            }, 350)
+
+            list.push(currentItem)
+          }
+
+          return list
+        }, [])
+      }
+
+      function _handleTotal(list) {
+        return list.reduce(
+          (payload, item) => {
+            const { list, total } = payload
+            const nextTotal = total + item.size
+            list.push({ ...item, total: nextTotal })
+
+            return { list, total: nextTotal }
+          },
+          { list: [], total: 0 }
+        ).list
+      }
+
+      function _oriPart(delta, oriMap, oriList) {
+        delta.forEach((item) => {
+          const [oriPrice, oriSize] = item
+          const [price, size] = [Number(oriPrice), Number(oriSize)]
+          const key = `key-${price}`
+          const oriItem = oriMap[key]
+
+          if (oriItem == null) {
+            oriList.push({ key, price, size, total: 0 })
+            oriList.sort((a, b) => a.price - b.price)
+          } else {
+            Object.assign(oriItem, { price, size })
+          }
+        })
+
+        return oriList.filter((item) => item.size !== 0)
+      }
+    },
+
+    initOrderbookSocket() {
+      const TOPIC_TEXT = 'update:BTCPFC'
+      const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
+
+      // Connection opened
+      orderbookSocket.addEventListener('open', () => {
+        orderbookSocket.send(JSON.stringify({ op: 'subscribe', args: [TOPIC_TEXT] }))
+      })
+
+      // Listen for messages
+      orderbookSocket.addEventListener('message', (event) => {
+        const { topic, data } = JSON.parse(event.data)
+
+        if (topic !== TOPIC_TEXT) return
+        switch (data.type) {
+          case 'snapshot':
+            this.handleSnapshot(data, 'snapshot')
+            break
+
+          case 'delta':
+            this.handleSnapshot(data, 'delta')
+            break
+        }
+      })
+    },
   },
 }
 </script>
@@ -79,48 +199,7 @@ export default {
   border-bottom-style: solid;
   border-bottom-color: var(--default-text-color-for-line);
 }
-
-table {
-  padding: 0px 6px;
-  width: 100%;
-
-  .table-header {
-    font-weight: 400;
-    color: var(--quote-table-head-text-color);
-  }
-
-  tbody {
-    font-weight: bold;
-    color: var(--default-text-color);
-  }
-
-  .price {
-    width: 30%;
-    text-align: left;
-  }
-  .size {
-    width: 20%;
-    text-align: right;
-  }
-  .total {
-    width: 50%;
-    text-align: right;
-  }
-
-  &.sell {
-    tbody {
-      .price {
-        color: var(--sell-quote-price-text-color);
-      }
-    }
-  }
-
-  &.buy {
-    tbody {
-      .price {
-        color: var(--buy-quote-price-text-color);
-      }
-    }
-  }
-}
 </style>
+
+<!-- reference -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations/Using_CSS_animations -->

@@ -1,9 +1,10 @@
 <template>
   <div class="container" :class="currentClass">
     <h2>
-      <thousand-text :amount="amount" />
+      <thousand-text v-if="firstMessage" :amount="amount" />
+      <span v-else>-</span>
     </h2>
-    <ArrowIcon class="icon" />
+    <ArrowIcon v-if="showIcon" class="icon" />
   </div>
 </template>
 
@@ -11,22 +12,66 @@
 import ThousandText from './ThousandText.vue'
 import ArrowIcon from './assets/IconArrowDown.svg?component'
 
+const DEFAULT_TEXT = 'default'
+const RED_TEXT = 'red'
+const GREEN_TEXT = 'green'
+
 export default {
   name: 'LastPrice',
 
   components: { ThousandText, ArrowIcon },
 
-  props: {
-    amount: {
-      type: Number,
-      required: true,
+  data() {
+    return {
+      currentClass: DEFAULT_TEXT,
+      amount: 0,
+      firstMessage: false,
+    }
+  },
+
+  computed: {
+    showIcon() {
+      return this.firstMessage && this.currentClass !== DEFAULT_TEXT
     },
   },
 
-  data() {
-    return {
-      currentClass: 'buy',
-    }
+  mounted() {
+    this.initLastPriceSocket()
+  },
+
+  methods: {
+    initLastPriceSocket() {
+      const socket = new WebSocket('wss://ws.btse.com/ws/futures')
+
+      socket.addEventListener('open', () => {
+        socket.send(JSON.stringify({ op: 'subscribe', args: ['tradeHistoryApi:BTCPFC'] }))
+      })
+
+      socket.addEventListener('message', (event) => {
+        this.firstMessage = true
+
+        const { topic, data } = JSON.parse(event.data)
+        if (topic !== 'tradeHistoryApi') return // 會有一個 { event: String, channel: String[] } 的 message
+
+        const { price } = data.sort((a, b) => b.timestamp - a.timestamp)[0]
+
+        switch (true) {
+          case this.amount === price:
+            this.currentClass = DEFAULT_TEXT
+            break
+
+          case this.amount > price:
+            this.currentClass = GREEN_TEXT
+            break
+
+          case this.amount < price:
+            this.currentClass = RED_TEXT
+            break
+        }
+
+        this.amount = price
+      })
+    },
   },
 }
 </script>
@@ -43,11 +88,19 @@ export default {
   margin-left: 6px;
 }
 
-.sell {
+.default {
+  background-color: var(--last-price-default-background-color);
+  color: var(--default-text-color);
+}
+
+// 紅色
+.red {
   background-color: var(--sell-quote-accumulative-total-size-bar-color);
   color: var(--sell-quote-price-text-color);
 }
-.buy {
+
+// 綠色
+.green {
   background-color: var(--buy-quote-accumulative-total-size-bar-color);
   color: var(--buy-quote-price-text-color);
 
@@ -56,3 +109,7 @@ export default {
   }
 }
 </style>
+
+<!-- reference -->
+<!-- https://medium.com/@alekswebnet/import-svg-to-vite-vue-projects-8168826a76c1 -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket -->
