@@ -15,7 +15,8 @@ export default {
 
   computed: {
     computedText() {
-      return Number(this.amount).toLocaleString()
+      const numberString = Number(this.amount).toLocaleString()
+      return /\.\d$/.test(numberString) ? numberString : `${numberString}.0`
     },
   },
 }

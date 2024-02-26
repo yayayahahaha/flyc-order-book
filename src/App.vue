@@ -2,6 +2,7 @@
   <div>
     <h3 class="title">Order Book</h3>
 
+    <!-- 紅色 -->
     <table class="sell">
       <thead>
         <tr>
@@ -25,9 +26,10 @@
       </tbody>
     </table>
 
-    <last-price :amount="amount" />
+    <!-- 中間的那個數字 -->
+    <last-price />
 
-    <!-- TODO 這個應該可以整理成一個? -->
+    <!-- 綠色 -->
     <table class="buy">
       <tbody>
         <tr v-for="item in buyData" :key="item.id /* TODO 這個還不確定 pk 是什麼 */">

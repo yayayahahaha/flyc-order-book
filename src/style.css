@@ -11,6 +11,9 @@
   --default-text-color: #f0f4f8;
   --quote-table-head-text-color: #8698aa;
 
+  /* last price 的預設背景顏色，是自己加上的 */
+  --last-price-default-background-color: rgba(134, 152, 170, 0.12);
+
   --buy-quote-price-text-color: #00b15d;
   --sell-quote-price-text-color: #ff5b5a;
 
