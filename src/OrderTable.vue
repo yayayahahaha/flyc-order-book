@@ -3,7 +3,7 @@
     <thead v-if="showHeaders">
       <tr>
         <th class="table-header price pl-5">Price (USD)</th>
-        <th class="table-header size">Size</th>
+        <th class="table-header size pr-5">Size</th>
         <th class="table-header total pr-5">Total</th>
       </tr>
     </thead>
@@ -12,7 +12,7 @@
         <td class="price pl-5">
           <thousand-text :amount="item.price" />
         </td>
-        <td class="size" :class="item.sizeClass">
+        <td class="size pr-5" :class="item.sizeClass">
           <thousand-text :amount="item.size" :no-zero="true" />
         </td>
         <td class="total pr-5">
