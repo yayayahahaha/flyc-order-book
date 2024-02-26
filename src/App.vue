@@ -103,13 +103,17 @@ export default {
       this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
       this.sellOriData = _oriPart(asks, this.sellOriMap, this.sellOriData)
 
-      // TODO 這邊以下要處理一下新增和閃爍的那部分
-
       const newSellData = handleTotal(this.sellOriData.slice(-8).reverse()).reverse()
       const newBuyData = handleTotal(this.buyOriData.slice(0, 8))
 
-      this.sellData = newSellData
-      this.buyData = newBuyData
+      // 如果是 snapshot 的話，代表是新的、直接指定上去就好
+      if (type === 'snapshot') {
+        this.sellData = newSellData
+        this.buyData = newBuyData
+        return
+      }
+
+      // TODO 新增閃爍、size 更新閃爍等
 
       function handleTotal(list) {
         return list.reduce(
