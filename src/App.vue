@@ -68,6 +68,12 @@ export default {
   mounted() {
     this.initOrderbookSocket()
 
+    // NEXT
+    // 1. 把 socket 停下、然後寫一些 function 去模擬收到各種類型的 socket 時會有的情況
+    // 看這些 function 要不要留下來可以做測試之類的
+    // 2. 把 task 裡面寫道的那些要重新 subscript 的場景模擬看看，跟那個什麼 seqNum 有關係
+
+    // TODO TESTING CODES
     window.vm = this
   },
 
@@ -87,9 +93,6 @@ export default {
         this.buyData = newBuyData
         return
       }
-
-      // TEST
-      // return
 
       // 這是 delta 的部分
       this.sellData = combineUpdate(newSellData, this.sellMap, 'sell')
