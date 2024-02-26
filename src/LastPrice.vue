@@ -56,3 +56,6 @@ export default {
   }
 }
 </style>
+
+<!-- reference -->
+<!-- https://medium.com/@alekswebnet/import-svg-to-vite-vue-projects-8168826a76c1 -->
