@@ -1,12 +1,23 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
 :root {
+  --default-text-color-for-line: #f0f4f822;
+
   --background-color: #131b29;
   --default-text-color: #f0f4f8;
   --quote-table-head-text-color: #8698aa;
+
   --buy-quote-price-text-color: #00b15d;
   --sell-quote-price-text-color: #ff5b5a;
+
   --quote-row-hover-background-color: #1e3059;
+
   --buy-quote-accumulative-total-size-bar-color: rgba(16, 186, 104, 0.12);
   --sell-quote-accumulative-total-size-bar-color: rgba(255, 90, 90, 0.12);
+
   --animation-flash-green-background-color: rgba(0, 177, 93, 0.5);
   --animation-flash-red-background-color: rgba(255, 91, 90, 0.5);
 
@@ -25,22 +36,8 @@
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
+  background-color: var(--background-color);
+
   min-width: 320px;
   min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-/* 這個或許可以保留然後做點調整之類的 */
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
