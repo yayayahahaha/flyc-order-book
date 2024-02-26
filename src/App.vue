@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="fade-out-red">
     <h3 class="title">Order Book</h3>
 
     <!-- 紅色 -->
@@ -16,7 +16,7 @@
           <td class="price">
             <thousand-text :amount="item.price" />
           </td>
-          <td class="size">
+          <td class="size" :class="item.class">
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
@@ -58,7 +58,10 @@ export default {
 
   data() {
     return {
+      oriSellData: [],
       sellData: [],
+
+      oriBuyData: [],
       buyData: [],
     }
   },
@@ -71,15 +74,28 @@ export default {
     buyTotal() {
       return this.buyData.slice(-1)[0].total
     },
+
+    sellMap() {
+      return Object.fromEntries(this.sellData.map((item) => [item.price, item]))
+    },
+
+    buyMap() {
+      return Object.fromEntries(this.buyData.map((item) => [item.price, item]))
+    },
   },
 
   mounted() {
     this.initOrderbookSocket()
+
+    window.vm = this
   },
 
   methods: {
     handleSnapshot(data) {
       const { bids, asks } = data
+
+      this.oriSellData = asks
+      this.oriBuyData = bids
 
       this.sellData = handleTotal(asks.map(_mapFunc).slice(-8).reverse()).reverse()
       this.buyData = handleTotal(bids.map(_mapFunc).slice(0, 8))
@@ -103,7 +119,41 @@ export default {
       }
     },
 
-    handleDelta(data) {},
+    handleDelta(data) {
+      const { bids, asks } = data
+
+      function handleList(deltaList, infoMap) {
+        deltaList.forEach((item) => {
+          const [price, size] = item
+
+          if (infoMap[price] != null) {
+            // 已經存在
+            switch (true) {
+              case infoMap[price].size < size:
+                infoMap[price].class = 'fade-out-green'
+                break
+
+              case infoMap[price].size > size:
+                infoMap[price].class = 'fade-out-red'
+                break
+            }
+            infoMap[price].size = size
+
+            // reset class: TODO 在連續修正的時候可能會有問題
+            setTimeout(() => {
+              infoMap[price].class = ''
+            }, 350)
+          } else {
+            // 新的
+            // currentList.push({ price, size, total: 123 })
+          }
+        })
+      }
+
+      handleList(asks, this.sellMap)
+
+      handleList(bids, this.buyMap)
+    },
 
     initOrderbookSocket() {
       const TOPIC_TEXT = 'update:BTCPFC'
@@ -184,6 +234,32 @@ table {
         color: var(--buy-quote-price-text-color);
       }
     }
+  }
+}
+
+.fade-out-red {
+  animation-duration: 0.3s;
+  animation-name: fade_out_red;
+  animation-fill-mode: forwards;
+}
+.fade-out-green {
+}
+
+@keyframes fade_out_red {
+  0% {
+    background-color: var(--animation-flash-red-background-color);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes fade_out_green {
+  0% {
+    background-color: var(--animation-flash-green-background-color);
+  }
+  100% {
+    background-color: transparent;
   }
 }
 </style>
