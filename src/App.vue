@@ -19,13 +19,13 @@
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
-            <thousand-text :amount="item.total" />
+            <total-bar :value="item.total" :total="total___" type="sell" />
           </td>
         </tr>
       </tbody>
     </table>
 
-    <center-price :amount="amount" />
+    <last-price :amount="amount" />
 
     <!-- TODO 這個應該可以整理成一個? -->
     <table class="buy">
@@ -38,7 +38,7 @@
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
-            <thousand-text :amount="item.total" />
+            <total-bar :value="item.total" :total="total___" type="buy" />
           </td>
         </tr>
       </tbody>
@@ -47,15 +47,17 @@
 </template>
 
 <script>
-import CenterPrice from './CenterPrice.vue'
+import LastPrice from './LastPrice.vue'
 import ThousandText from './ThousandText.vue'
+import TotalBar from './TotalBar.vue'
 
 export default {
-  components: { CenterPrice, ThousandText },
+  components: { LastPrice, ThousandText, TotalBar },
 
   data() {
     return {
       amount: 123123,
+      total___: 123123123,
 
       sellData: [],
       buyData: [],
@@ -79,7 +81,7 @@ export default {
 }
 
 table {
-  padding: 0px 12px;
+  padding: 0px 6px;
   width: 100%;
 
   .table-header {

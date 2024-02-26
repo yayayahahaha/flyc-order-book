@@ -12,7 +12,7 @@ import ThousandText from './ThousandText.vue'
 import ArrowIcon from './assets/IconArrowDown.svg?component'
 
 export default {
-  name: 'CenterPrice',
+  name: 'LastPrice',
 
   components: { ThousandText, ArrowIcon },
 
@@ -28,14 +28,6 @@ export default {
       currentClass: 'buy',
     }
   },
-
-  computed: {},
-
-  watch: {},
-
-  created() {},
-
-  methods: {},
 }
 </script>
 

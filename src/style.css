@@ -4,6 +4,7 @@
 }
 
 :root {
+  /* title 下面那條線的顏色, 這個是自己加上 opacity 的  */
   --default-text-color-for-line: #f0f4f822;
 
   --background-color: #131b29;
@@ -15,6 +16,7 @@
 
   --quote-row-hover-background-color: #1e3059;
 
+  /* total 後面 bar 的顏色  */
   --buy-quote-accumulative-total-size-bar-color: rgba(16, 186, 104, 0.12);
   --sell-quote-accumulative-total-size-bar-color: rgba(255, 90, 90, 0.12);
 
