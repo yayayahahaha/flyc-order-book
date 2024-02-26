@@ -48,8 +48,8 @@ export default {
   .bar {
     position: absolute;
     right: 0px;
-    top: 0px;
-    bottom: 0px;
+    top: 1px;
+    bottom: 1px;
 
     z-index: -1;
 

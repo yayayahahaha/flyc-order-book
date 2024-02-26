@@ -1,21 +1,21 @@
 <template>
   <table :class="type">
-    <thead>
+    <thead v-if="showHeaders">
       <tr>
-        <th class="table-header price">Price (USD)</th>
+        <th class="table-header price pl-5">Price (USD)</th>
         <th class="table-header size">Size</th>
-        <th class="table-header total">Total</th>
+        <th class="table-header total pr-5">Total</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="item in data" :key="item.key">
-        <td class="price">
+      <tr v-for="item in data" :key="item.key" :class="item.class">
+        <td class="price pl-5">
           <thousand-text :amount="item.price" />
         </td>
-        <td class="size" :class="item.class">
+        <td class="size" :class="item.sizeClass">
           <thousand-text :amount="item.size" />
         </td>
-        <td class="total">
+        <td class="total pr-5">
           <total-bar :value="item.total" :total="total" :type="type" />
         </td>
       </tr>
@@ -26,6 +26,9 @@
 <script>
 import ThousandText from './ThousandText.vue'
 import TotalBar from './TotalBar.vue'
+
+const SELL_TEXT = 'sell'
+const BUY_TEXT = 'buy'
 
 export default {
   name: 'OrderTable',
@@ -44,29 +47,37 @@ export default {
     },
 
     type: {
-      validator: (value) => ['sell', 'buy'].includes(value),
+      validator: (value) => [SELL_TEXT, BUY_TEXT].includes(value),
       required: true,
     },
   },
 
-  data() {
-    return {}
+  computed: {
+    showHeaders() {
+      return this.type === SELL_TEXT
+    },
   },
-
-  computed: {},
-
-  watch: {},
-
-  created() {},
-
-  methods: {},
 }
 </script>
 
 <style lang="scss" scoped>
 table {
-  padding: 0px 6px;
   width: 100%;
+  border-spacing: 0;
+
+  .pl-5 {
+    padding-left: 5px;
+  }
+  .pr-5 {
+    padding-right: 5px;
+  }
+
+  tr {
+    margin: 2px 0px;
+  }
+  td {
+    line-height: 1.5;
+  }
 
   .table-header {
     font-weight: 400;
@@ -136,3 +147,6 @@ table {
   }
 }
 </style>
+
+<!-- reference -->
+<!-- https://www.w3schools.com/html/html_table_padding_spacing.asp -->

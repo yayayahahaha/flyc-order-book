@@ -17,6 +17,11 @@
 import LastPrice from './LastPrice.vue'
 import OrderTable from './OrderTable.vue'
 
+const FADE_OUT_GREEN_CLASS = 'fade-out-green'
+const FADE_OUT_RED_CLASS = 'fade-out-red'
+const SELL_TEXT = 'sell'
+const BUY_TEXT = 'buy'
+
 export default {
   components: { LastPrice, OrderTable },
 
@@ -83,30 +88,32 @@ export default {
         return
       }
 
-      // TESTING
-      return
+      // TEST
+      // return
 
       // 這是 delta 的部分
-      this.sellData = combineUpdate(newSellData, this.sellMap)
-      this.buyData = combineUpdate(newBuyData, this.buyMap)
+      this.sellData = combineUpdate(newSellData, this.sellMap, 'sell')
+      this.buyData = combineUpdate(newBuyData, this.buyMap, 'buy')
 
-      function combineUpdate(newList, currentMap) {
+      function combineUpdate(newList, currentMap, type) {
         return newList.reduce((list, item) => {
           const { key, total, size } = item
           const currentItem = currentMap[key]
-          if (currentItem == null) list.push({ ...item, class: 'fade-out-green' })
-          else {
+          if (currentItem == null) {
+            const className = type === SELL_TEXT ? FADE_OUT_RED_CLASS : type === BUY_TEXT ? FADE_OUT_GREEN_CLASS : ''
+            list.push({ ...item, class: className })
+          } else {
             // total 直接覆寫
             currentItem.total = total
 
             // size 的閃爍處理
             switch (true) {
               case currentItem.size < size:
-                currentItem.class = 'fade-out-green'
+                currentItem.sizeClass = FADE_OUT_GREEN_CLASS
                 break
 
               case currentItem.size > size:
-                currentItem.class = 'fade-out-red'
+                currentItem.sizeClass = FADE_OUT_RED_CLASS
                 break
             }
             currentItem.size = size
