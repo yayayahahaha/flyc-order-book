@@ -58,10 +58,10 @@ export default {
 
   data() {
     return {
-      oriSellData: [],
+      sellOriData: [],
       sellData: [],
 
-      oriBuyData: [],
+      buyOriData: [],
       buyData: [],
     }
   },
@@ -75,10 +75,16 @@ export default {
       return this.buyData.slice(-1)[0].total
     },
 
+    sellOriMap() {
+      return Object.fromEntries(this.sellOriData.map((item) => [item.price, item]))
+    },
     sellMap() {
       return Object.fromEntries(this.sellData.map((item) => [item.price, item]))
     },
 
+    buyOriMap() {
+      return Object.fromEntries(this.buyOriData.map((item) => [item.price, item]))
+    },
     buyMap() {
       return Object.fromEntries(this.buyData.map((item) => [item.price, item]))
     },
@@ -94,11 +100,28 @@ export default {
     handleSnapshot(data) {
       const { bids, asks } = data
 
-      this.oriSellData = asks
-      this.oriBuyData = bids
+      function oriPart(delta, oriMap, oriList) {
+        delta.forEach((item) => {
+          const [price, size] = item
+          const oriItem = oriMap[price]
+          if (oriItem == null) {
+            oriList.push({ price, size })
+            oriList.sort((a, b) => Number(a.price) - Number(b.price))
+          } else {
+            Object.assign(oriItem, { price, size })
+          }
+        })
 
-      this.sellData = handleTotal(asks.map(_mapFunc).slice(-8).reverse()).reverse()
-      this.buyData = handleTotal(bids.map(_mapFunc).slice(0, 8))
+        return oriList.filter((item) => Number(item.size) !== 0)
+      }
+
+      this.buyOriData = oriPart(bids, this.buyOriMap, this.buyOriData)
+      this.sellOriData = oriPart(asks, this.sellOriMap, this.sellOriData)
+
+      // TODO 這邊以下要處理一下新增和閃爍的那部分
+
+      this.sellData = handleTotal(this.sellOriData.slice(-8).map(_mapFunc).reverse()).reverse()
+      this.buyData = handleTotal(this.buyOriData.slice(0, 8).map(_mapFunc))
 
       function handleTotal(list) {
         return list.reduce(
@@ -114,7 +137,7 @@ export default {
       }
 
       function _mapFunc(item) {
-        const [price, size] = item
+        const { price, size } = item
         return { price, size: Number(size), key: `key-${price}`, total: 0 }
       }
     },
@@ -175,7 +198,8 @@ export default {
             break
 
           case 'delta':
-            this.handleDelta(data)
+            console.log('receive delta')
+            this.handleSnapshot(data)
             break
         }
       })
@@ -243,6 +267,9 @@ table {
   animation-fill-mode: forwards;
 }
 .fade-out-green {
+  animation-duration: 0.3s;
+  animation-name: fade_out_green;
+  animation-fill-mode: forwards;
 }
 
 @keyframes fade_out_red {
@@ -263,3 +290,6 @@ table {
   }
 }
 </style>
+
+<!-- reference -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations/Using_CSS_animations -->
