@@ -25,7 +25,7 @@
       </tbody>
     </table>
 
-    <center-price />
+    <center-price :amount="amount" />
 
     <!-- TODO 這個應該可以整理成一個? -->
     <table class="buy">
@@ -55,6 +55,8 @@ export default {
 
   data() {
     return {
+      amount: 123123,
+
       sellData: [],
       buyData: [],
     }
