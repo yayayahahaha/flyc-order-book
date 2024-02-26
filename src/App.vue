@@ -36,7 +36,7 @@
           <td class="price">
             <thousand-text :amount="item.price" />
           </td>
-          <td class="size">
+          <td class="size" :class="item.class">
             <thousand-text :amount="item.size" />
           </td>
           <td class="total">
@@ -103,8 +103,8 @@ export default {
       this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
       this.sellOriData = _oriPart(asks, this.sellOriMap, this.sellOriData)
 
-      const newSellData = handleTotal(this.sellOriData.slice(-8).reverse()).reverse()
-      const newBuyData = handleTotal(this.buyOriData.slice(0, 8))
+      const newSellData = _handleTotal(this.sellOriData.slice(-8)).reverse()
+      const newBuyData = _handleTotal(this.buyOriData.slice(0, 8))
 
       // 如果是 snapshot 的話，代表是新的、直接指定上去就好
       if (type === 'snapshot') {
@@ -113,9 +113,44 @@ export default {
         return
       }
 
-      // TODO 新增閃爍、size 更新閃爍等
+      // 這是 delta 的部分
+      this.sellData = combineUpdate(this.sellData, newSellData, this.sellMap)
+      this.buyData = combineUpdate(this.buyData, newBuyData, this.buyMap)
 
-      function handleTotal(list) {
+      function combineUpdate(currentList, newList, currentMap) {
+        return newList.reduce((list, item) => {
+          const { key, total, size } = item
+          const currentItem = currentMap[key]
+          if (currentItem == null) list.push(item)
+          else {
+            // total 直接覆寫
+            currentItem.total = total
+
+            // size 的閃爍處理
+            switch (true) {
+              case currentItem.size < size:
+                currentItem.class = 'fade-out-green'
+                break
+
+              case currentItem.size > size:
+                currentItem.class = 'fade-out-red'
+                break
+            }
+            currentItem.size = size
+
+            // reset class: TODO 在連續修正的時候可能會有問題
+            setTimeout(() => {
+              currentItem.class = ''
+            }, 350)
+
+            list.push(currentItem)
+          }
+
+          return list
+        }, [])
+      }
+
+      function _handleTotal(list) {
         return list.reduce(
           (payload, item) => {
             const { list, total } = payload
@@ -145,42 +180,6 @@ export default {
 
         return oriList.filter((item) => item.size !== 0)
       }
-    },
-
-    handleDelta(data) {
-      const { bids, asks } = data
-
-      function handleList(deltaList, infoMap) {
-        deltaList.forEach((item) => {
-          const [price, size] = item
-
-          if (infoMap[price] != null) {
-            // 已經存在
-            switch (true) {
-              case infoMap[price].size < size:
-                infoMap[price].class = 'fade-out-green'
-                break
-
-              case infoMap[price].size > size:
-                infoMap[price].class = 'fade-out-red'
-                break
-            }
-            infoMap[price].size = size
-
-            // reset class: TODO 在連續修正的時候可能會有問題
-            setTimeout(() => {
-              infoMap[price].class = ''
-            }, 350)
-          } else {
-            // 新的
-            // currentList.push({ price, size, total: 123 })
-          }
-        })
-      }
-
-      handleList(asks, this.sellMap)
-
-      handleList(bids, this.buyMap)
     },
 
     initOrderbookSocket() {
