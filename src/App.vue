@@ -3,58 +3,22 @@
     <h3 class="title">Order Book</h3>
 
     <!-- 紅色 -->
-    <table class="sell">
-      <thead>
-        <tr>
-          <th class="table-header price">Price (USD)</th>
-          <th class="table-header size">Size</th>
-          <th class="table-header total">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in sellData" :key="item.key">
-          <td class="price">
-            <thousand-text :amount="item.price" />
-          </td>
-          <td class="size" :class="item.class">
-            <thousand-text :amount="item.size" />
-          </td>
-          <td class="total">
-            <total-bar :value="item.total" :total="sellTotal" type="sell" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <order-table :data="sellData" :total="sellTotal" type="sell" />
 
     <!-- 中間的那個數字 -->
     <last-price />
 
     <!-- 綠色 -->
-    <table class="buy">
-      <tbody>
-        <tr v-for="item in buyData" :key="item.key">
-          <td class="price">
-            <thousand-text :amount="item.price" />
-          </td>
-          <td class="size" :class="item.class">
-            <thousand-text :amount="item.size" />
-          </td>
-          <td class="total">
-            <total-bar :value="item.total" :total="buyTotal" type="buy" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <order-table :data="buyData" :total="buyTotal" type="buy" />
   </div>
 </template>
 
 <script>
 import LastPrice from './LastPrice.vue'
-import ThousandText from './ThousandText.vue'
-import TotalBar from './TotalBar.vue'
+import OrderTable from './OrderTable.vue'
 
 export default {
-  components: { LastPrice, ThousandText, TotalBar },
+  components: { LastPrice, OrderTable },
 
   data() {
     return {
@@ -68,11 +32,17 @@ export default {
 
   computed: {
     sellTotal() {
-      return this.sellData[0].total
+      const neededItem = this.sellData[0]
+      if (neededItem == null) return 0
+
+      return neededItem.total
     },
 
     buyTotal() {
-      return this.buyData.slice(-1)[0].total
+      const neededItem = this.buyData.slice(-1)[0]
+      if (neededItem == null) return 0
+
+      return neededItem.total
     },
 
     sellOriMap() {
@@ -113,15 +83,18 @@ export default {
         return
       }
 
-      // 這是 delta 的部分
-      this.sellData = combineUpdate(this.sellData, newSellData, this.sellMap)
-      this.buyData = combineUpdate(this.buyData, newBuyData, this.buyMap)
+      // TESTING
+      return
 
-      function combineUpdate(currentList, newList, currentMap) {
+      // 這是 delta 的部分
+      this.sellData = combineUpdate(newSellData, this.sellMap)
+      this.buyData = combineUpdate(newBuyData, this.buyMap)
+
+      function combineUpdate(newList, currentMap) {
         return newList.reduce((list, item) => {
           const { key, total, size } = item
           const currentItem = currentMap[key]
-          if (currentItem == null) list.push(item)
+          if (currentItem == null) list.push({ ...item, class: 'fade-out-green' })
           else {
             // total 直接覆寫
             currentItem.total = total
@@ -218,79 +191,6 @@ export default {
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: var(--default-text-color-for-line);
-}
-
-table {
-  padding: 0px 6px;
-  width: 100%;
-
-  .table-header {
-    font-weight: 400;
-    color: var(--quote-table-head-text-color);
-  }
-
-  tbody {
-    font-weight: bold;
-    color: var(--default-text-color);
-  }
-
-  .price {
-    width: 30%;
-    text-align: left;
-  }
-  .size {
-    width: 20%;
-    text-align: right;
-  }
-  .total {
-    width: 50%;
-    text-align: right;
-  }
-
-  &.sell {
-    tbody {
-      .price {
-        color: var(--sell-quote-price-text-color);
-      }
-    }
-  }
-
-  &.buy {
-    tbody {
-      .price {
-        color: var(--buy-quote-price-text-color);
-      }
-    }
-  }
-}
-
-.fade-out-red {
-  animation-duration: 0.3s;
-  animation-name: fade_out_red;
-  animation-fill-mode: forwards;
-}
-.fade-out-green {
-  animation-duration: 0.3s;
-  animation-name: fade_out_green;
-  animation-fill-mode: forwards;
-}
-
-@keyframes fade_out_red {
-  0% {
-    background-color: var(--animation-flash-red-background-color);
-  }
-  100% {
-    background-color: transparent;
-  }
-}
-
-@keyframes fade_out_green {
-  0% {
-    background-color: var(--animation-flash-green-background-color);
-  }
-  100% {
-    background-color: transparent;
-  }
 }
 </style>
 
