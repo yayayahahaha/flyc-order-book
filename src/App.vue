@@ -71,6 +71,33 @@ export default {
   },
 
   methods: {
+    handleSnapshot(data) {
+      const { bids, asks } = data
+
+      this.sellData = handleTotal(asks.map(_mapFunc).slice(-8).reverse()).reverse()
+      this.buyData = handleTotal(bids.map(_mapFunc).slice(0, 8))
+
+      function handleTotal(list) {
+        return list.reduce(
+          (payload, item) => {
+            const { list, total } = payload
+            const nextTotal = total + item.size
+            list.push({ ...item, total: nextTotal })
+
+            return { list, total: nextTotal }
+          },
+          { list: [], total: 0 }
+        ).list
+      }
+
+      function _mapFunc(item) {
+        const [price, size] = item
+        return { price, size: Number(size), key: `key-${price}`, total: 0 }
+      }
+    },
+
+    handleDelta(data) {},
+
     initOrderbookSocket() {
       const TOPIC_TEXT = 'update:BTCPFC'
       const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
@@ -85,18 +112,16 @@ export default {
         const { topic, data } = JSON.parse(event.data)
 
         if (topic !== TOPIC_TEXT) return
-        if (data.type !== 'snapshot') return
+        switch (data.type) {
+          case 'snapshot':
+            this.handleSnapshot(data)
+            break
 
-        const { bids, asks } = data
-
-        this.sellData = asks.map(_mapFunc).slice(-8)
-        this.buyData = bids.map(_mapFunc).slice(0, 8)
+          case 'delta':
+            this.handleDelta(data)
+            break
+        }
       })
-
-      function _mapFunc(item) {
-        const [price, size] = item
-        return { price, size, key: `key-${price}`, total: 123 }
-      }
     },
   },
 }
