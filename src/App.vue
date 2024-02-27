@@ -217,8 +217,11 @@ export default {
         const { topic, data } = JSON.parse(event.data)
         if (topic !== TOPIC_TEXT) return
 
+        // Seq check
         currentNum = this.checkSeq(currentNum, data)
         if (currentNum == null) return void this.resetSocket()
+
+        // TODO Crossed book Scenario?
 
         this.handleSocketMessage(data, data.type)
       })
