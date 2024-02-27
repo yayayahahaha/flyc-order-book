@@ -23,6 +23,8 @@ export default {
 
   data() {
     return {
+      socket: null,
+
       currentClass: DEFAULT_TEXT,
       amount: 0,
       firstMessage: false,
@@ -42,35 +44,78 @@ export default {
   methods: {
     initLastPriceSocket() {
       const socket = new WebSocket('wss://ws.btse.com/ws/futures')
+      this.socket = socket
 
       socket.addEventListener('open', () => {
         socket.send(JSON.stringify({ op: 'subscribe', args: ['tradeHistoryApi:BTCPFC'] }))
       })
 
       socket.addEventListener('message', (event) => {
-        this.firstMessage = true
-
-        const { topic, data } = JSON.parse(event.data)
-        if (topic !== 'tradeHistoryApi') return // 會有一個 { event: String, channel: String[] } 的 message
-
-        const { price } = data.sort((a, b) => b.timestamp - a.timestamp)[0]
-
-        switch (true) {
-          case this.amount === price:
-            this.currentClass = DEFAULT_TEXT
-            break
-
-          case this.amount > price:
-            this.currentClass = GREEN_TEXT
-            break
-
-          case this.amount < price:
-            this.currentClass = RED_TEXT
-            break
-        }
-
-        this.amount = price
+        this.handleSocketMessage(event)
       })
+    },
+
+    // Call by parent component also
+    handleSocketMessage(event) {
+      this.firstMessage = true
+
+      const { topic, data } = JSON.parse(event.data)
+      if (topic !== 'tradeHistoryApi') return // 會有一個 { event: String, channel: String[] } 的 message
+
+      const { price } = data.sort((a, b) => b.timestamp - a.timestamp)[0]
+
+      switch (true) {
+        case this.amount === price:
+          this.currentClass = DEFAULT_TEXT
+          break
+
+        case this.amount < price:
+          this.currentClass = GREEN_TEXT
+          break
+
+        case this.amount > price:
+          this.currentClass = RED_TEXT
+          break
+      }
+
+      this.amount = price
+    },
+
+    // Call by parent component
+    stopSocket() {
+      if (!(this.socket instanceof WebSocket)) {
+        alert(`[${this.$options.name}]: socket is not an instance of WebSocket!`)
+        return
+      }
+      this.socket.close()
+    },
+
+    // 測試用 function
+    updateLastPrice() {
+      const randomNum = Math.floor(Math.random() * 3)
+      console.log('randomNum:', randomNum)
+      let price
+      switch (randomNum) {
+        case 0:
+          price = Number(this.amount) + Math.round(Math.random() * 100 + 100)
+          break
+
+        case 1:
+          price = Number(this.amount) - Math.round(Math.random() * 100)
+          break
+
+        case 2:
+          price = this.amount
+          break
+      }
+
+      const fakeSocketEvent = {
+        data: JSON.stringify({
+          topic: 'tradeHistoryApi',
+          data: [{ price }],
+        }),
+      }
+      this.handleSocketMessage(fakeSocketEvent)
     },
   },
 }

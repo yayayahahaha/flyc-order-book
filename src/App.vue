@@ -6,10 +6,35 @@
     <order-table :data="sellData" :total="sellTotal" type="sell" />
 
     <!-- 中間的那個數字 -->
-    <last-price />
+    <last-price :ref="lastPriceRef" />
 
     <!-- 綠色 -->
     <order-table :data="buyData" :total="buyTotal" type="buy" />
+  </div>
+
+  <!-- 測試用區塊 -->
+  <div class="test-area-container">
+    <h3 class="title">Test area</h3>
+    <div class="buttons-container">
+      <div class="row">
+        <button @click="stopSocket">Stop Socket</button>
+        <button @click="restartSocket">Restart Socket</button>
+      </div>
+
+      <div class="row">
+        <button @click="createRandomOrder('sell')">Add Sell</button>
+        <button @click="createRandomOrder('buy')">Add Buy</button>
+      </div>
+
+      <div class="row">
+        <button @click="updateSize('sell')">Update Sell Size</button>
+        <button @click="updateSize('buy')">Update Buy Size</button>
+      </div>
+
+      <div class="row">
+        <button @click="updateLastPrice">Update Last Price</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -27,6 +52,10 @@ export default {
 
   data() {
     return {
+      lastPriceRef: 'last-price-ref',
+
+      orderbookSocket: null,
+
       sellOriData: [],
       sellData: [],
 
@@ -72,7 +101,7 @@ export default {
   },
 
   methods: {
-    handleSnapshot(data, type) {
+    handleSocketMessage(data, type) {
       const { bids, asks } = data
 
       this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
@@ -87,9 +116,6 @@ export default {
         this.buyData = newBuyData
         return
       }
-
-      // TEST
-      // return
 
       // 這是 delta 的部分
       this.sellData = combineUpdate(newSellData, this.sellMap, 'sell')
@@ -120,8 +146,8 @@ export default {
 
             // reset class: TODO 在連續修正的時候可能會有問題
             setTimeout(() => {
-              currentItem.class = ''
-            }, 350)
+              currentItem.sizeClass = ''
+            }, 300)
 
             list.push(currentItem)
           }
@@ -162,9 +188,23 @@ export default {
       }
     },
 
+    checkSeq(currentSeq, { prevSeqNum, seqNum }) {
+      if (currentSeq == null) return seqNum
+
+      if (currentSeq !== prevSeqNum) return null
+      return seqNum
+    },
+
+    resetSocket() {
+      this.orderbookSocket.close()
+      this.orderbookSocket = null
+      this.initOrderbookSocket()
+    },
+
     initOrderbookSocket() {
       const TOPIC_TEXT = 'update:BTCPFC'
       const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
+      this.orderbookSocket = orderbookSocket
 
       // Connection opened
       orderbookSocket.addEventListener('open', () => {
@@ -172,20 +212,89 @@ export default {
       })
 
       // Listen for messages
+      let currentNum = null
       orderbookSocket.addEventListener('message', (event) => {
         const { topic, data } = JSON.parse(event.data)
-
         if (topic !== TOPIC_TEXT) return
-        switch (data.type) {
-          case 'snapshot':
-            this.handleSnapshot(data, 'snapshot')
-            break
 
-          case 'delta':
-            this.handleSnapshot(data, 'delta')
-            break
-        }
+        // Seq check
+        currentNum = this.checkSeq(currentNum, data)
+        if (currentNum == null) return void this.resetSocket()
+
+        // TODO Crossed book Scenario?
+
+        this.handleSocketMessage(data, data.type)
       })
+    },
+
+    // 測試用 methods
+    stopSocket() {
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      if (lastPriceComponent != null) {
+        lastPriceComponent.stopSocket()
+      }
+
+      if (!(this.orderbookSocket instanceof WebSocket)) {
+        alert(`[${this.$options.name}]: orderbookSocket is not an instance of WebSocket!`)
+        return
+      }
+
+      this.orderbookSocket.close()
+    },
+    restartSocket() {
+      this.resetSocket()
+
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      lastPriceComponent.initLastPriceSocket()
+    },
+    createRandomOrder(type = 'buy') {
+      const data = type === 'buy' ? this.buyData : this.sellData
+      const previous = data[Math.ceil(Math.random() * 6)] // 第 2 ~ 7 個 (idnex: 1 ~ 6)
+      const list = [
+        [previous.price, 0],
+        [
+          Number(previous.price) + (Math.random() > 0.5 ? -1 : 1 * Math.ceil(Math.random() * 5 + 5)),
+          Math.round(Math.random() * 1234),
+        ],
+      ]
+
+      const fakeSocket = {
+        asks: [],
+        bids: [],
+      }
+
+      if (type === 'buy') {
+        fakeSocket.bids = list
+      } else {
+        fakeSocket.asks = list
+      }
+
+      this.handleSocketMessage(fakeSocket, 'delta')
+    },
+
+    updateSize(type = 'buy') {
+      const data = type === 'buy' ? this.buyData : this.sellData
+
+      const item = data[Math.floor(Math.random() * 7)]
+
+      const { price, size } = item
+
+      const newSize = size + (Math.random() > 0.5 ? 1 : -1 * Math.round(Math.random() * 5 + 5))
+      const fakeSocket = {
+        asks: [],
+        bids: [],
+      }
+      if (type === 'buy') {
+        fakeSocket.bids = [[price, newSize]]
+      } else {
+        fakeSocket.asks = [[price, newSize]]
+      }
+      this.handleSocketMessage(fakeSocket, 'delta')
+    },
+
+    updateLastPrice() {
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      lastPriceComponent.updateLastPrice()
     },
   },
 }
@@ -199,7 +308,30 @@ export default {
   border-bottom-style: solid;
   border-bottom-color: var(--default-text-color-for-line);
 }
+
+// 測試區塊 stylesheets
+.test-area-container {
+  margin-top: 24px;
+
+  .buttons-container {
+    padding: 6px;
+
+    .row {
+      &:not(:last-child) {
+        margin-bottom: 6px;
+      }
+    }
+
+    button {
+      padding: 6px;
+      &:not(:last-child) {
+        margin-right: 6px;
+      }
+    }
+  }
+}
 </style>
 
 <!-- reference -->
 <!-- https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations/Using_CSS_animations -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close -->
