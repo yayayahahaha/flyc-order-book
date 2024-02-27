@@ -6,10 +6,35 @@
     <order-table :data="sellData" :total="sellTotal" type="sell" />
 
     <!-- 中間的那個數字 -->
-    <last-price />
+    <last-price :ref="lastPriceRef" />
 
     <!-- 綠色 -->
     <order-table :data="buyData" :total="buyTotal" type="buy" />
+  </div>
+
+  <!-- 測試用區塊 -->
+  <div class="test-area-container">
+    <h3 class="title">Test area</h3>
+    <div class="buttons-container">
+      <div class="row">
+        <button @click="stopSocket">Stop Socket</button>
+      </div>
+
+      <div class="row">
+        <button @click="addSell">Add Sell</button>
+        <button @click="addBuy">Add Buy</button>
+      </div>
+
+      <div class="row">
+        <button @click="updateSellSize">Update Sell Size</button>
+        <button @click="updateBuySize">Update Buy Size</button>
+      </div>
+
+      <div class="row">
+        <button @click="setUpperLastPrice">Set Upper Last Price</button>
+        <button @click="setLowerLastPrice">Set Lower Last Price</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -27,6 +52,10 @@ export default {
 
   data() {
     return {
+      lastPriceRef: 'last-price-ref',
+
+      orderbookSocket: null,
+
       sellOriData: [],
       sellData: [],
 
@@ -78,7 +107,7 @@ export default {
   },
 
   methods: {
-    handleSnapshot(data, type) {
+    handleSocketMessage(data, type) {
       const { bids, asks } = data
 
       this.buyOriData = _oriPart(bids, this.buyOriMap, this.buyOriData)
@@ -168,6 +197,7 @@ export default {
     initOrderbookSocket() {
       const TOPIC_TEXT = 'update:BTCPFC'
       const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
+      this.orderbookSocket = orderbookSocket
 
       // Connection opened
       orderbookSocket.addEventListener('open', () => {
@@ -181,15 +211,36 @@ export default {
         if (topic !== TOPIC_TEXT) return
         switch (data.type) {
           case 'snapshot':
-            this.handleSnapshot(data, 'snapshot')
+            this.handleSocketMessage(data, 'snapshot')
             break
 
           case 'delta':
-            this.handleSnapshot(data, 'delta')
+            this.handleSocketMessage(data, 'delta')
             break
         }
       })
     },
+
+    // 測試用 methods
+    stopSocket() {
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      if (lastPriceComponent != null) {
+        lastPriceComponent.stopSocket()
+      }
+
+      if (!(this.orderbookSocket instanceof WebSocket)) {
+        alert(`[${this.$options.name}]: orderbookSocket is not an instance of WebSocket!`)
+        return
+      }
+
+      this.orderbookSocket.close()
+    },
+    addSell() {},
+    addBuy() {},
+    updateSellSize() {},
+    updateBuySize() {},
+    setUpperLastPrice() {},
+    setLowerLastPrice() {},
   },
 }
 </script>
@@ -202,7 +253,30 @@ export default {
   border-bottom-style: solid;
   border-bottom-color: var(--default-text-color-for-line);
 }
+
+// 測試區塊 stylesheets
+.test-area-container {
+  margin-top: 24px;
+
+  .buttons-container {
+    padding: 6px;
+
+    .row {
+      &:not(:last-child) {
+        margin-bottom: 6px;
+      }
+    }
+
+    button {
+      padding: 6px;
+      &:not(:last-child) {
+        margin-right: 6px;
+      }
+    }
+  }
+}
 </style>
 
 <!-- reference -->
 <!-- https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animations/Using_CSS_animations -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close -->

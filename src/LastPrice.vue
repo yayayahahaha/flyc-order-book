@@ -23,6 +23,8 @@ export default {
 
   data() {
     return {
+      socket: null,
+
       currentClass: DEFAULT_TEXT,
       amount: 0,
       firstMessage: false,
@@ -42,6 +44,7 @@ export default {
   methods: {
     initLastPriceSocket() {
       const socket = new WebSocket('wss://ws.btse.com/ws/futures')
+      this.socket = socket
 
       socket.addEventListener('open', () => {
         socket.send(JSON.stringify({ op: 'subscribe', args: ['tradeHistoryApi:BTCPFC'] }))
@@ -71,6 +74,15 @@ export default {
 
         this.amount = price
       })
+    },
+
+    // Call by parent component
+    stopSocket() {
+      if (!(this.socket instanceof WebSocket)) {
+        alert(`[${this.$options.name}]: socket is not an instance of WebSocket!`)
+        return
+      }
+      this.socket.close()
     },
   },
 }
