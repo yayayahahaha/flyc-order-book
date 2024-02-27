@@ -8,7 +8,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr v-for="item in data" :key="item.key" :class="item.class">
+      <tr v-for="item in data" :key="item.key" class="row" :class="item.class">
         <td class="price pl-5">
           <thousand-text :amount="item.price" />
         </td>
@@ -108,12 +108,26 @@ table {
         color: var(--sell-quote-price-text-color);
       }
     }
+
+    .row {
+      &:hover {
+        background-color: var(--animation-flash-red-background-color) !important; // to avoid animate forwards behavior.
+      }
+    }
   }
 
   &.buy {
     tbody {
       .price {
         color: var(--buy-quote-price-text-color);
+      }
+    }
+
+    .row {
+      &:hover {
+        background-color: var(
+          --animation-flash-green-background-color
+        ) !important; // to avoid animate forwards behavior.
       }
     }
   }
