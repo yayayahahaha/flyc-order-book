@@ -278,7 +278,11 @@ export default {
       }
       this.handleSocketMessage(fakeSocket, 'delta')
     },
-    updateLastPrice() {},
+
+    updateLastPrice() {
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      lastPriceComponent.updateLastPrice()
+    },
   },
 }
 </script>
