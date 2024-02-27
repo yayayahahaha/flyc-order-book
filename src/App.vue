@@ -187,6 +187,19 @@ export default {
       }
     },
 
+    checkSeq(currentSeq, { prevSeqNum, seqNum }) {
+      if (currentSeq == null) return seqNum
+
+      if (currentSeq !== prevSeqNum) return null
+      return seqNum
+    },
+
+    resetSocket() {
+      this.orderbookSocket.close()
+      this.orderbookSocket = null
+      this.initOrderbookSocket()
+    },
+
     initOrderbookSocket() {
       const TOPIC_TEXT = 'update:BTCPFC'
       const orderbookSocket = new WebSocket('wss://ws.btse.com/ws/oss/futures')
@@ -198,19 +211,15 @@ export default {
       })
 
       // Listen for messages
+      let currentNum = null
       orderbookSocket.addEventListener('message', (event) => {
         const { topic, data } = JSON.parse(event.data)
-
         if (topic !== TOPIC_TEXT) return
-        switch (data.type) {
-          case 'snapshot':
-            this.handleSocketMessage(data, 'snapshot')
-            break
 
-          case 'delta':
-            this.handleSocketMessage(data, 'delta')
-            break
-        }
+        currentNum = this.checkSeq(currentNum, data)
+        if (currentNum == null) return void this.resetSocket()
+
+        this.handleSocketMessage(data, data.type)
       })
     },
 
