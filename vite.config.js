@@ -4,6 +4,8 @@ import svgLoader from 'vite-svg-loader'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/flyc-order-book/',
+
   server: {
     port: 7777,
   },
