@@ -21,18 +21,17 @@
       </div>
 
       <div class="row">
-        <button @click="addSell">Add Sell</button>
-        <button @click="addBuy">Add Buy</button>
+        <button @click="createRandomOrder('sell')">Add Sell</button>
+        <button @click="createRandomOrder('buy')">Add Buy</button>
       </div>
 
       <div class="row">
-        <button @click="updateSellSize">Update Sell Size</button>
-        <button @click="updateBuySize">Update Buy Size</button>
+        <button @click="updateSize('sell')">Update Sell Size</button>
+        <button @click="updateSize('buy')">Update Buy Size</button>
       </div>
 
       <div class="row">
-        <button @click="setUpperLastPrice">Set Upper Last Price</button>
-        <button @click="setLowerLastPrice">Set Lower Last Price</button>
+        <button @click="updateLastPrice">Update Last Price</button>
       </div>
     </div>
   </div>
@@ -152,8 +151,8 @@ export default {
 
             // reset class: TODO 在連續修正的時候可能會有問題
             setTimeout(() => {
-              currentItem.class = ''
-            }, 350)
+              currentItem.sizeClass = ''
+            }, 300)
 
             list.push(currentItem)
           }
@@ -235,31 +234,51 @@ export default {
 
       this.orderbookSocket.close()
     },
-    addSell() {
-      const fakeSocket = {
-        asks: this.createRandomOrder(this.sellData),
-        bids: [],
-      }
-      this.handleSocketMessage(fakeSocket, 'delta')
-    },
-    addBuy() {
+    createRandomOrder(type = 'buy') {
+      const data = type === 'buy' ? this.buyData : this.sellData
+      const previous = data[Math.ceil(Math.random() * 6)] // 第 2 ~ 7 個 (idnex: 1 ~ 6)
+      const list = [
+        [previous.price, 0],
+        [
+          Number(previous.price) + (Math.random() > 0.5 ? -1 : 1 * Math.ceil(Math.random() * 5 + 5)),
+          Math.round(Math.random() * 1234),
+        ],
+      ]
+
       const fakeSocket = {
         asks: [],
-        bids: this.createRandomOrder(this.buyData),
+        bids: [],
+      }
+
+      if (type === 'buy') {
+        fakeSocket.bids = list
+      } else {
+        fakeSocket.asks = list
+      }
+
+      this.handleSocketMessage(fakeSocket, 'delta')
+    },
+
+    updateSize(type = 'buy') {
+      const data = type === 'buy' ? this.buyData : this.sellData
+
+      const item = data[Math.floor(Math.random() * 7)]
+
+      const { price, size } = item
+
+      const newSize = size + (Math.random() > 0.5 ? 1 : -1 * Math.round(Math.random() * 5 + 5))
+      const fakeSocket = {
+        asks: [],
+        bids: [],
+      }
+      if (type === 'buy') {
+        fakeSocket.bids = [[price, newSize]]
+      } else {
+        fakeSocket.asks = [[price, newSize]]
       }
       this.handleSocketMessage(fakeSocket, 'delta')
     },
-    createRandomOrder(data) {
-      const previous = data[Math.ceil(Math.random() * 6)] // 第 2 ~ 7 個 (idnex: 1 ~ 6)
-      return [
-        [previous.price, 0],
-        [previous.price - Math.random() * 5 + 5, Math.round(Math.random() * 1234)],
-      ]
-    },
-    updateSellSize() {},
-    updateBuySize() {},
-    setUpperLastPrice() {},
-    setLowerLastPrice() {},
+    updateLastPrice() {},
   },
 }
 </script>
