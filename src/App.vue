@@ -235,8 +235,27 @@ export default {
 
       this.orderbookSocket.close()
     },
-    addSell() {},
-    addBuy() {},
+    addSell() {
+      const fakeSocket = {
+        asks: this.createRandomOrder(this.sellData),
+        bids: [],
+      }
+      this.handleSocketMessage(fakeSocket, 'delta')
+    },
+    addBuy() {
+      const fakeSocket = {
+        asks: [],
+        bids: this.createRandomOrder(this.buyData),
+      }
+      this.handleSocketMessage(fakeSocket, 'delta')
+    },
+    createRandomOrder(data) {
+      const previous = data[Math.ceil(Math.random() * 6)] // 第 2 ~ 7 個 (idnex: 1 ~ 6)
+      return [
+        [previous.price, 0],
+        [previous.price - Math.random() * 5 + 5, Math.round(Math.random() * 1234)],
+      ]
+    },
     updateSellSize() {},
     updateBuySize() {},
     setUpperLastPrice() {},
