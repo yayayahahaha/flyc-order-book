@@ -18,6 +18,7 @@
     <div class="buttons-container">
       <div class="row">
         <button @click="stopSocket">Stop Socket</button>
+        <button @click="restartSocket">Restart Socket</button>
       </div>
 
       <div class="row">
@@ -236,6 +237,12 @@ export default {
       }
 
       this.orderbookSocket.close()
+    },
+    restartSocket() {
+      this.resetSocket()
+
+      const lastPriceComponent = this.$refs[this.lastPriceRef]
+      lastPriceComponent.initLastPriceSocket()
     },
     createRandomOrder(type = 'buy') {
       const data = type === 'buy' ? this.buyData : this.sellData
